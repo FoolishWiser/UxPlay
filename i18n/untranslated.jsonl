@@ -1,0 +1,25 @@
+# msgids that are intentionally left in English.
+# One JSON object per line; "why" is for humans, the tool only reads "en".
+{"en": " ", "why": "单个空格，拼接格式用"}
+{"en": "%02x", "why": "纯格式片段"}
+{"en": "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x", "why": "MAC 地址格式"}
+{"en": "%2.2x", "why": "纯格式片段"}
+{"en": "%2.2x ", "why": "纯格式片段（地址分段）"}
+{"en": "%c", "why": "纯格式片段"}
+{"en": "%d", "why": "纯格式片段"}
+{"en": "%d.%d.%d.%d", "why": "IPv4 地址格式"}
+{"en": "%u", "why": "纯格式片段"}
+{"en": ".%9.9lu", "why": "时间戳文件名字段"}
+{"en": ".%d", "why": "文件扩展名拼接"}
+{"en": ".%d.aac", "why": "录制文件名后缀（HLS/AAC）"}
+{"en": ".%d.alac", "why": "录制文件名后缀（HLS/ALAC）"}
+{"en": ".%d.aud", "why": "录制文件名后缀（未知音频格式）"}
+{"en": ": ", "why": "冒号+空格，拼接格式用"}
+{"en": ":%2.2x", "why": "纯格式片段（地址分段）"}
+{"en": "AAC_ELD", "why": "编解码器标识，与 GStreamer caps 同名，保留英文"}
+{"en": "ALAC", "why": "编解码器标识，与 GStreamer caps 同名，保留英文"}
+{"en": "TYPE=?", "why": "GStreamer caps 片段，保留英文"}
+{"en": "fe80::%02x%02x:%02x%02x:%02x%02x:%02x%02x%%%u", "why": "IPv6 链路本地地址格式"}
+
+{"en": "audio latency %8.6f\n", "why": "被注释掉的调试打印（audio_renderer.c）"}
+{"en": "video latency %8.6f\n", "why": "被注释掉的调试打印（video_renderer.c）"}

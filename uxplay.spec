@@ -129,12 +129,14 @@ cd build
 %{_bindir}/uxplay_beacon_module_BleuIO.py
 %{_bindir}/uxplay_beacon_module_HCI.py
 %{_mandir}/man1/uxplay.1*
+%{_mandir}/zh_CN/man1/uxplay.1*
 %{_mandir}/man1/uxplay-beacon.1*
 
 %doc
 %{_docdir}/%{name}/README.txt
 #%{_docdir}/%{name}/README.html
 %{_docdir}/%{name}/README.md
+%{_docdir}/%{name}/README.zh-CN.md
 %{_docdir}/%{name}/systemd/uxplay.service
 
 %license

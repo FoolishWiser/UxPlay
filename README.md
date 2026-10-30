@@ -1,5 +1,7 @@
 # UxPlay 1.74 (Experimental): AirPlay-Mirror and AirPlay-Audio server for Linux, macOS, and Unix (also runs on Windows).
 
+> 🌐 **English** (this page) | [简体中文](README.zh-CN.md)
+
 ### **Now developed at the GitHub site <https://github.com/FDH2/UxPlay> (where ALL user issues should be posted, and latest versions can be found).**
 
 -   **NEW in v 1.74 (Experimental) (June 2026)

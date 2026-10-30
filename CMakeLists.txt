@@ -158,7 +158,10 @@ endif()
 
 install( TARGETS  uxplay RUNTIME DESTINATION bin )
 install( FILES uxplay.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )
-install( FILES README.md README.txt README.html LICENSE DESTINATION ${CMAKE_INSTALL_DOCDIR} ) 
+# Simplified-Chinese translation of uxplay.1 (installed as a localized man page,
+# so "LANG=zh_CN.UTF-8 man uxplay" shows the Chinese version)
+install( FILES uxplay.zh.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/zh_CN/man1 RENAME uxplay.1 )
+install( FILES README.md README.txt README.html LICENSE README.zh-CN.md DESTINATION ${CMAKE_INSTALL_DOCDIR} ) 
 install( FILES lib/llhttp/LICENSE-MIT DESTINATION ${CMAKE_INSTALL_DOCDIR}/llhttp )
 install( FILES uxplay.service DESTINATION ${CMAKE_INSTALL_DOCDIR}/systemd ) 
 install( FILES Bluetooth_LE_beacon/uxplay-beacon.1 DESTINATION ${CMAKE_INSTALL_MANDIR}/man1 )

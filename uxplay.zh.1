@@ -1,0 +1,252 @@
+.TH UXPLAY "1" "2026-08-03" "UxPlay 1.74" "User Commands"
+.SH NAME
+uxplay \- 启动 AirPlay 服务器
+.SH SYNOPSIS
+.B uxplay
+[\fI\,-n name\/\fR] [\fI\,-s wxh\/\fR] [\fI\,-p \/\fR[\fI\,n\/\fR]] [更多 \fI OPTIONS \/\fR ...]
+.SH DESCRIPTION
+UxPlay 1.74：开源（open\-source）AirPlay 镜像（+ 音频串流）服务器：
+.SH OPTIONS
+.TP
+.B
+\fB\-n\fR name   指定 AirPlay 服务器的网络名称（UTF-8/ascii）
+.TP
+\fB\-nh\fR       \fB不要\fR在 AirPlay 服务器名称末尾追加 \"@\fIhostname\fR\"
+.TP
+\fB\-h265\fR     支持 h265（4K）视频（使用 h264 插件的 h265 版本）
+.TP
+\fB\-mp4\fI [fn]\fR 将（非 HLS）音频/视频录制到 mp4 文件 \"fn.[n].[format].mp4\"
+.IP
+   n=1,2,.. format = H264/5, ALAC/AAC。默认 fn=\"recording\"
+.TP
+\fB\-hls\fR [v]  支持 HTTP Live Streaming（HLS），仅限 YouTube 应用视频：
+.IP
+   v = 2 或 3（默认 3），可选地指定视频播放器版本
+.TP
+\fB\-lang\fR ... 分级 HLS 语言偏好（\"fr:pt-BR:..\"）；\" \" = 无
+.TP
+\fB\-slang\fR ...分级 HLS 字幕语言偏好（覆盖 -lang） 
+.TP
+\fB\-custom\fI s\fR 按编解码器限制 HLS 分辨率（在低功耗主机上很有用）
+.TP   
+\fB\-custom\fR   省略输入 \"profile string\"\fI s\fR，以显示其所需格式。
+.TP
+\fB\-rpi\fI n\fR    按型号代码\fI n\fR 在 R Pi 上预设 HLS \"profile strings\"
+.TP
+\fB\-rpi\fR      显示 \"-rpi n\" 可用的 Raspberry Pi 型号代码\fI n\fR
+.TP
+\fB\-scrsv\fI n\fR  屏保覆盖 \fIn\fR：0=关闭 1=显示视频期间开启 2=始终开启。
+.TP
+\fB\-pin\fI[xxxx]\fR使用 4 位 PIN 码控制客户端访问（默认：否）
+.IP
+   不带该选项时，PIN 码为随机值；可选地使用固定 PIN 码 xxxx。
+.TP
+\fB\-p2p\fR      通过 Apple 点对点接口通告并接受 AirPlay。
+.IP
+   仅在装有 Apple Bonjour 的 macOS 上可用；需要 \fB\-pin\fR。此功能
+   允许通过 Apple Wireless Direct Link  连接到附近的 Apple 设备。 
+.TP 
+\fB\-reg\fI [fn]\fR 在 $HOME/.uxplay.register 中保存注册信息，用于验证再次
+.IP
+   连接的客户端 PIN 注册；（可选：改用文件 \"fn\"）
+.TP
+\fB\-pw\fI [pwd]\fR 要求使用密码 \"pwd\" 来控制客户端访问。
+.IP
+   （未提供 \fIpwd\fR 时，\fI每次\fR连接都需要输入 PIN 码。）
+
+.IP
+   （在 \"-pin\" 之后使用 \"-pw\" 选项会覆盖它，反之亦然。）
+.TP
+\fB\-vsync\fI[x]\fR 镜像模式：使用时间戳将音频同步到视频（默认）
+.IP
+   \fIx\fR 为可选的音频延迟：毫秒，可为小数，可为负值。
+.TP
+\fB\-vsync\fR no 关闭音频/（服务器）视频时间戳同步。
+.TP
+\fB\-async\fR[\fIx\fR] 纯音频模式：将音频同步到客户端视频（默认：否）。
+.TP
+\fB\-async\fR no 关闭音频/（客户端）视频时间戳同步。
+.TP
+\fB\-db\fI l[:h]\fR 将最小音量衰减设为 l dB（分贝，负值）；
+.IP
+   可选：将最大值设为 h dB（+ 或 -）；默认 -30.0:0.0
+.PP
+.TP
+\fB\-taper\fR    使用 \"tapered\"（渐变）式 AirPlay 音量控制配置。
+.TP
+\fB\-vol\fI v \fR   设置初始音频串流音量：范围 [mute=0.0:1.0=full]。
+.TP
+\fB\-s\fR wxh[@r]向客户端请求视频显示分辨率 [refresh_rate]
+.IP
+   默认 1920x1080[@60]（使用 -h265 选项时为 3840x2160[@60]）。
+.PP
+.TP
+\fB\-o\fR        开启显示的 \"overscanned\"（过扫描）模式（通常无需使用）
+.TP
+\fB-fs\fR       全屏（仅限 X11、Wayland、VAAPI、D3D11、kms）
+.TP
+\fB\-p\fR        使用传统端口 UDP 6000:6001:7011 TCP 7000:7001:7100
+.TP
+\fB\-p\fR n      使用 TCP 和 UDP 端口 n,n+1,n+2。范围 1024\-65535
+.IP
+   使用 \"\-p n1,n2,n3\" 分别设置各端口，\"n1,n2\" 表示 n3 = n2+1
+.IP
+   \"\-p tcp n\" 或 \"\-p udp n\" 分别设置 TCP 或 UDP 端口。
+.PP
+.TP
+\fB\-avdec\fR    强制使用 libav 解码器进行软件 h264 视频解码。
+.TP
+\fB\-vp\fI prs \fR  选择 GStreamer h264 解析器；默认 \"h264parse\"
+.TP
+\fB\-vd\fI dec \fR  选择 GStreamer h264 解码器；默认 \"decodebin\"
+.IP
+   可选值：（软件）avdec_h264；（硬件）v4l2h264dec，
+.IP
+   nvdec、nvh264dec、vaapih264dec、vtdec、...
+.TP
+\fB\-vc\fI cnv \fR  选择 GStreamer 视频转换器；默认 \"videoconvert\"
+.IP
+   使用 v4l2h264dec 时的另一种选择：v4l2convert。
+.TP
+\fB\-vs\fI sink\fR  选择 GStreamer 视频输出；默认 \"autovideosink\"
+.IP
+   可选值：ximagesink,xvimagesink,vaapisink,glimagesink,
+.IP
+   gtksink,waylandsink,kmssink,fbdevsink,osxvideosink,
+.IP
+   d3d11videosink,d3d12videosink ...
+.PP
+.TP
+\fB\-vs\fR 0     仅串流音频，不显示视频窗口。
+.TP
+\fB\-vrtp\fI pl\fR  使用 rtph26[4,5]pay 将解码后的视频发送到别处：\"pl\"
+.IP
+   为余下的管道，以 rtph26*pay 选项开头：
+.IP
+   e.g. "config-interval=1 ! udpsink host=127.0.0.1 port=5000"
+.TP
+\fB\-artp\fI pl\fR  使用 rtpL16pay 将解码后的音频发送到别处：\"pl\"
+.IP
+   为余下的管道，以 rtpL16pay 选项开头：
+.IP
+   e.g. "pt=96 ! udpsink host=127.0.0.1 port=5002"
+.PP
+.TP
+\fB\-v4l2\fR     使用 Video4Linux2 进行 GPU 硬件 h264 视频解码。
+.TP
+\fB\-bt709\fR    使用 Video4Linux2 的 Raspberry Pi 型号有时需要此选项。
+.TP
+\fB\-srgb\fR     显示 \"Full range\" [0-255] 色彩，而非 \"Limited Range\"[16-235]
+.IP
+   这是针对 GStreamer 某个问题的临时规避方案，直至该问题被修复。
+.PP
+\fB\-srgb\fR no  禁用 srgb 选项（在默认启用的情况下使用：Linux、*BSD）
+.TP
+\fB\-as\fI sink\fR  选择 GStreamer 音频输出；默认 \"autoaudiosink\"
+.IP
+   可选值：pulsesink,alsasink,pipewiresink,osssink,oss4sink,
+.IP
+   jackaudiosink,osxaudiosink,wasapisink,directsoundsink,..
+.PP
+.TP
+\fB\-as\fR 0     （或 \fB\-a\fR）关闭音频，仅串流视频。
+.TP
+\fB\-al\fR x     报告给客户端的音频延迟，单位为秒（默认 0.25）。
+.TP
+\fB\-ca\fR       在 AirPlay 音频（ALAC）模式下显示封面图。
+.TP
+\fB\-ca\fI fn \fR   在 Airplay 音频（ALAC）模式下，将封面图写入文件 fn。
+.TP
+\fB\-md\fI fn \fR   在 Airplay 音频（ALAC）模式下，将元数据文本写入文件 fn。
+.TP
+\fB\-reset\fR n  客户端静默 n 秒后重置（默认 n=15，0=永不重置）。
+.TP
+\fB\-nofreeze\fR 重置后不要保留冻结画面。
+.TP
+\fB\-nc\fR       客户端停止镜像时不要关闭视频窗口。
+.TP
+\fB\-nc\fR  no   取消 -nc 选项（即关闭视频窗口）。
+.TP
+\fB\-nohold\fR   新客户端连接时断开当前连接。
+.TP
+\fB\-restrict\fR 仅允许由 \"-allow deviceID\" 指定的客户端。
+.IP
+   当客户端尝试连接时，Uxplay 会显示 deviceID。
+.IP
+   使用 \"-restrict no\" 表示不限制客户端（默认）。
+.PP
+\fB\-allow\fR id 在施加限制时，允许 deviceID = id 的设备连接。
+.TP
+\fB\-block\fR id 始终阻止来自 deviceID = id 的连接。
+.TP
+\fB\-FPSdata\fR  显示客户端发送的视频串流性能报告。
+.TP
+\fB\-fps\fR n    设置允许的最大串流帧率，默认 30
+.TP
+\fB\-f\fR {H|V|I}水平|垂直翻转，或两者同时=反转=旋转 180 度
+.TP
+\fB\-r\fR {R|L}  向右（顺时针）或向左（逆时针）旋转 90 度
+.TP
+\fB\-m\fI [mac]\fR  设置 MAC 地址（同时也是 Device ID）；用于同时运行多个 UxPlay
+.IP
+   若未给出 mac 地址 xx:xx:xx:xx:xx:xx，则使用随机 MAC。
+.PP
+.TP
+\fB\-key\fI [fn]\fR 将私钥保存到 $HOME/.uxplay.pem（或文件 \"fn\"）
+.PP
+.TP
+\fB\-dacp\fI [fn]\fR将客户端 DACP 信息导出到文件 $HOME/.uxplay.dacp
+.IP
+   （可选：改用文件 \"fn\"）；用于客户端遥控器。
+.PP
+.TP
+\fB\-vdmp\fR [n] 将 h264 视频输出转储到 \"fn.h264\"；fn=\"videodump\"，可通过
+.IP
+   \"-vdmp [n] filename\" 修改文件名。若给出 [n]，则文件 fn.x.h264
+.IP
+   （x=1,2,..）在每次收到新的 SPS/PPS NAL 时打开，并且最多转储
+.IP
+   n 个 NAL 单元。
+.PP
+.TP
+\fB\-admp\fR [n] 将音频输出转储到 \"fn.x.fmt\"，fmt ={aac, alac, aud}，x
+.IP
+   =1,2,..；fn=\"audiodump\"；可用 \"-admp [n] filename\" 修改。
+.IP
+   音频格式改变时 x 递增。若给出 n，则最多转储
+.IP
+   n 个音频包。\"aud\"= 未知格式。
+.PP
+.TP
+\fB\-ble\fI [fn]\fR 用于 BluetoothLE 信标：将数据写入默认文件 ~/.uxplay.ble
+.IP
+   可选：写入文件 \"fn\"（\"fn\" = \"off\" 表示取消）
+.TP
+\fB\-d [n]\fR    启用调试日志；可选：n=1 跳过普通数据包数据。
+.TP
+\fB\-v\fR        显示版本信息
+.TP
+\fB\-h\fR        显示帮助信息
+.TP
+\fB\-rc\fI fn\fR    从文件 \"fn\" 读取启动选项，而不是 ~/.uxplayrc 等
+.SH
+FILES
+以下位置之一中的选项：$UXPLAYRC、~/.uxplayrc 或  ~/.config/uxplayrc
+.TP
+会首先被应用（命令行选项可能会修改它们）。格式：
+.TP
+每行一个选项，\fI不要\fR 在开头加 \"-\"；以 \"#\" 开头的行会被忽略。
+.SH
+AUTHORS
+.TP
+众多贡献者，详见网站或发行版。
+.SH
+COPYRIGHT
+.TP
+众多贡献者，详见网站或发行版。许可证：GPL v3+： 
+.TP
+GNU GPL 第 3 版或更高版本。（部分内容为 LGPL v.2.1+ 或 MIT）。
+.SH
+SEE ALSO
+.TP
+网站：<https://github.com/FDH2/UxPlay>

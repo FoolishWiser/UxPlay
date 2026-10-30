@@ -69,6 +69,7 @@
 #include "lib/raop.h"
 #include "lib/stream.h"
 #include "lib/logger.h"
+#include "lib/i18n.h"
 #include "lib/crypto.h"
 #include "renderers/video_renderer.h"
 #include "renderers/audio_renderer.h"
@@ -279,17 +280,17 @@ static void log(int level, const char* format, ...) {
     case 1:
     case 2:
     case 3:
-        printf("*** ERROR: ");
+        printf(_("*** ERROR: "));
         break;
     case 4:
-        printf("*** WARNING: ");
+        printf(_("*** WARNING: "));
         break;
     default:
         break;
     }
     va_start(vargs, format);
-    vprintf(format, vargs);
-    printf("\n");
+    vprintf(tr(format), vargs);
+    printf(_("\n"));
     va_end(vargs);
 }
 
@@ -480,7 +481,7 @@ static const unsigned char empty_image[] = {
 static size_t write_coverart(const char *filename, const void *image, size_t len) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
-        printf("Failed to open file %s\n", filename);
+        printf(_("Failed to open file %s\n"), filename);
         return 0;
     }
     size_t count = fwrite(image, 1, len, fp);
@@ -491,7 +492,7 @@ static size_t write_coverart(const char *filename, const void *image, size_t len
 static size_t write_metadata(const char *filename, const char *text) {
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
-        printf("Failed to open file %s\n", filename);
+        printf(_("Failed to open file %s\n"), filename);
         return 0;
     }
     size_t count = fwrite(text, sizeof(char), strlen(text) + 1, fp);
@@ -504,10 +505,10 @@ static int write_bledata( const uint32_t *pid, const char *process_name, const c
     size_t len = strlen(process_name);
     FILE *fp = fopen(filename, "wb");
     if (!fp) {
-        printf("Failed to open file %s\n", filename);
+        printf(_("Failed to open file %s\n"), filename);
         return 0;
     }
-    printf("port %u\n", raop_port);
+    printf(_("port %u\n"), raop_port);
     size_t count = sizeof(uint16_t) * fwrite(&raop_port, sizeof(uint16_t), 1, fp);
     count += sizeof(uint32_t) * fwrite(pid, sizeof(uint32_t), 1, fp);
     count += sizeof(char) * len * fwrite(process_name, 1, len * sizeof(char), fp);
@@ -757,7 +758,7 @@ static void display_progress(uint32_t start, uint32_t curr, uint32_t end) {
     int duration = (int)  (end  - start)/44100;
     int position = (int)  (curr - start)/44100;
     int remain = duration - position;
-    printf("audio progress (min:sec): %3d:%2.2d; remaining: %3d:%2.2d; track length %d:%2.2d\r",
+    printf(_("audio progress (min:sec): %3d:%2.2d; remaining: %3d:%2.2d; track length %d:%2.2d\r"),
            position/60, position%60, remain/60, remain%60, duration/60, duration%60);
     fflush(NULL);
 }
@@ -1099,118 +1100,122 @@ static std::string random_mac () {
 }
 
 static void print_info (char *name) {
-    printf("UxPlay %s: An open-source AirPlay mirroring server.\n", VERSION);
-    printf("=========== Website: https://github.com/FDH2/UxPlay ==========\n");
-    printf("Usage: %s [-n name] [-s wxh] [-p [n]] [(other options)]\n", name);
-    printf("Options:\n");
-    printf("-n name   Specify network name of the AirPlay server (UTF-8/ascii)\n");
-    printf("-nh       Do not add \"@hostname\" at the end of AirPlay server name\n");
-    printf("-h265     Support h265 (4K) video (with h265 versions of h264 plugins)\n");
-    printf("-mp4 [fn] Record (non-HLS)audio/video to mp4 file \"fn.[n].[format].mp4\"\n");
-    printf("          n=1,2,.. format = H264/5, ALAC/AAC. Default fn=\"recording\"\n");
-    printf("-hls [v]  Support HTTP Live Streaming (HLS), Youtube app video only: \n");
-    printf("          v = 2 or 3 (default 3) optionally selects video player version\n");
-    printf("-lang ... Ranked HLS language preferences (\"fr:pt-BR:..\");\" \" = none\n");
-    printf("-slang ...Ranked HLS subtitle language preferences (overrides -lang)\n");
-    printf("-custom s Restrict HLS resolutions by codec (useful on low-power hosts)\n");
-    printf("-custom   Omit input \"profile string\" s to show its required format\n");
-    printf("-rpi n    Set pre-selected HLS \"profile strings\" on R PI by model code n\n");
-    printf("-rpi      Shows possible Raspberry Pi model codes n for \"-rpi n\"\n");
-    printf("-scrsv n  Screensaver override n: 0=off 1=on while displaying video 2=always on\n");
-    printf("-pin[xxxx]Use a 4-digit pin code to control client access (default: no)\n");
-    printf("          default pin is random: optionally use fixed pin xxxx\n");
-    printf("-p2p      Advertise and accept AirPlay over Apple peer-to-peer (macOS only)\n");
-    printf("          uses a one-time pin; makes UxPlay visible to nearby Apple devices\n");
-    printf("-reg [fn] Keep a register in $HOME/.uxplay.register to verify returning\n");
-    printf("          client pin-registration; (option: use file \"fn\" for this)\n");
-    printf("-pw [pwd] Require use of password to control client access;\n");
-    printf("          (with no pwd, pin entry is required at *each* connection.)\n");  
-    printf("          (option \"-pw\" after \"-pin\" overrides it, and vice versa)\n");
-    printf("-vsync [x]Mirror mode: sync audio to video using timestamps (default)\n");
-    printf("          x is optional audio delay: millisecs, decimal, can be neg.\n");
-    printf("-vsync no Switch off audio/(server)video timestamp synchronization \n");
-    printf("-async [x]Audio-Only mode: sync audio to client video (default: no)\n");
-    printf("-async no Switch off audio/(client)video timestamp synchronization\n");
-    printf("-db l[:h] Set minimum volume attenuation to l dB (decibels, negative);\n");
-    printf("          optional: set maximum to h dB (+ or -) default: -30.0:0.0 dB\n");
-    printf("-taper    Use a \"tapered\" AirPlay volume-control profile\n");
-    printf("-vol <v>  Set initial audio-streaming volume: range [mute=0.0:1.0=full]\n"); 
-    printf("-s wxh[@r]Request to client for video display resolution [refresh_rate]\n"); 
-    printf("          default 1920x1080[@60] (or 3840x2160[@60] with -h265 option)\n");
-    printf("-o        Set display \"overscanned\" mode on (not usually needed)\n");
-    printf("-fs       Full-screen (only with X11, Wayland, VAAPI, D3D11/12, kms)\n");
-    printf("-p        Use legacy ports UDP 6000:6001:7011 TCP 7000:7001:7100\n");
-    printf("-p n      Use TCP and UDP ports n,n+1,n+2. range %d-%d\n", LOWEST_ALLOWED_PORT, HIGHEST_PORT);
-    printf("          use \"-p n1,n2,n3\" to set each port, \"n1,n2\" for n3 = n2+1\n");
-    printf("          \"-p tcp n\" or \"-p udp n\" sets TCP or UDP ports separately\n");
-    printf("-avdec    Force software h264 video decoding with libav decoder\n"); 
-    printf("-vp ...   Choose the GSteamer h264 parser: default \"h264parse\"\n");
-    printf("-vd ...   Choose the GStreamer h264 decoder; default \"decodebin\"\n");
-    printf("          choices: (software) avdec_h264; (hardware) v4l2h264dec,\n");
-    printf("          nvdec, nvh264dec, vaapih264dec, vtdec,etc.\n");
-    printf("          choices: avdec_h264,vaapih264dec,nvdec,nvh264dec,v4l2h264dec\n");
-    printf("-vc ...   Choose the GStreamer videoconverter; default \"videoconvert\"\n");
-    printf("          another choice when using v4l2h264dec: v4l2convert\n");
-    printf("-vs ...   Choose the GStreamer videosink; default \"autovideosink\"\n");
-    printf("          some choices: ximagesink,xvimagesink,vaapisink,glimagesink,\n");
-    printf("          gtksink,waylandsink,kmssink,fbdevsink,osxvideosink,\n");
-    printf("          d3d11videosink,d3d12videosink, etc.\n");
-    printf("-vs 0     Streamed audio only, with no video display window\n");
-    printf("-vrtp pl  Use rtph26[4,5]pay to send decoded video elsewhere: \"pl\"\n");
-    printf("          is the remaining pipeline, starting with rtph26*pay options:\n");
-    printf("          e.g. \"config-interval=1 ! udpsink host=127.0.0.1 port=5000\"\n");
-    printf("          Writes output to \"fn.N.mp4\"\n");
-    printf("-v4l2     Use Video4Linux2 for GPU hardware h264 decoding\n");
-    printf("-bt709    Sometimes needed for Raspberry Pi models using Video4Linux2 \n");
-    printf("-srgb     Display \"Full range\" [0-255] color, not \"Limited Range\"[16-235]\n");
-    printf("          This is a workaround for a GStreamer problem, until it is fixed\n");
-    printf("-srgb no  Disable srgb option (use when enabled by default: Linux, *BSD)\n");
-    printf("-as ...   Choose the GStreamer audiosink; default \"autoaudiosink\"\n");
-    printf("          some choices:pulsesink,alsasink,pipewiresink,jackaudiosink,\n");
-    printf("          osssink,oss4sink,osxaudiosink,wasapisink,directsoundsink.\n");
-    printf("-as 0     (or -a)  Turn audio off, streamed video only\n");
-    printf("-artp pl  Use rtpL16pay to send decoded audio elsewhere: \"pl\"\n");
-    printf("          is the remaining pipeline, starting with rtpL16pay options:\n");
-    printf("          e.g. \"pt=96 ! udpsink host=127.0.0.1 port=5002\"\n");
-    printf("-al x     Audio latency in seconds (default 0.25) reported to client.\n");
-    printf("-ca [<fn>]In Audio (ALAC) mode, render cover-art [or write to file <fn>]\n");
-    printf("-md <fn>  In Airplay Audio (ALAC) mode, write metadata text to file <fn>\n");
-    printf("-reset n  Reset after n seconds of client silence (default n=%d, 0=never)\n", MISSED_FEEDBACK_LIMIT);
-    printf("-nofreeze Do NOT leave frozen screen in place after reset\n");
-    printf("-nc       Do NOT  Close video window when client stops mirroring\n");
-    printf("-nc no    Cancel the -nc option (DO close video window) \n");
-    printf("-nohold   Drop current connection when new client connects.\n");
-    printf("-restrict Restrict clients to those specified by \"-allow <deviceID>\"\n");
-    printf("          UxPlay displays deviceID when a client attempts to connect\n");
-    printf("          Use \"-restrict no\" for no client restrictions (default)\n");
-    printf("-allow <i>Permit deviceID = <i> to connect if restrictions are imposed\n");
-    printf("-block <i>Always block connections from deviceID = <i>\n");
-    printf("-FPSdata  Show video-streaming performance reports sent by client.\n");
-    printf("-fps n    Set maximum allowed streaming framerate, default 30\n");
-    printf("-f {H|V|I}Horizontal|Vertical flip, or both=Inversion=rotate 180 deg\n");
-    printf("-r {R|L}  Rotate 90 degrees Right (cw) or Left (ccw)\n");
-    printf("-m [mac]  Set MAC address (also Device ID);use for concurrent UxPlays\n");
-    printf("          if mac xx:xx:xx:xx:xx:xx is not given, a random MAC is used\n");
-    printf("-key [fn] Store private key in $HOME/.uxplay.pem (or in file \"fn\")\n");
-    printf("-dacp [fn]Export client DACP information to file $HOME/.uxplay.dacp\n");
-    printf("          (option to use file \"fn\" instead); used for client remote\n");
-    printf("-ble [fn] For BluetoothLE beacon: write data to file ~/.uxplay.ble\n");
-    printf("          optional: write to file \"fn\" (\"fn\" = \"off\" to cancel)\n");
-    printf("-d [n]    Enable debug logging; optional: n=1 to skip normal packet data\n");
-    printf("-vdmp [n] Dump h264 video output to \"fn.h264\"; fn=\"videodump\",change\n");
-    printf("          with \"-vdmp [n] filename\". If [n] is given, file fn.x.h264\n");
-    printf("          x=1,2,.. opens whenever a new SPS/PPS NAL arrives, and <=n\n");
-    printf("          NAL units are dumped.\n");
-    printf("-admp [n] Dump audio output to \"fn.x.fmt\", fmt ={aac, alac, aud}, x\n");
-    printf("          =1,2,..; fn=\"audiodump\"; change with \"-admp [n] filename\".\n");
-    printf("          x increases when audio format changes. If n is given, <= n\n");
-    printf("          audio packets are dumped. \"aud\"= unknown format.\n");
-    printf("-v        Displays version information\n");
-    printf("-h        Displays this help\n");
-    printf("-rc fn    Read startup options from file \"fn\" instead of ~/.uxplayrc, etc\n");
-    printf("Startup options in $UXPLAYRC, ~/.uxplayrc, or ~/.config/uxplayrc are\n");
-    printf("applied first (command-line options may modify them): format is one \n");
-    printf("option per line, no initial \"-\"; lines starting with \"#\" are ignored.\n");
+    printf(_("UxPlay %s: An open-source AirPlay mirroring server.\n"), VERSION);
+    printf(_("=========== Website: https://github.com/FDH2/UxPlay ==========\n"));
+    printf(_("Usage: %s [-n name] [-s wxh] [-p [n]] [(other options)]\n"), name);
+    printf(_("Options:\n"));
+    printf(_("-n name   Specify network name of the AirPlay server (UTF-8/ascii)\n"));
+    printf(_("-nh       Do not add \"@hostname\" at the end of AirPlay server name\n"));
+    printf(_("-h265     Support h265 (4K) video (with h265 versions of h264 plugins)\n"));
+    printf(_("-mp4 [fn] Record (non-HLS)audio/video to mp4 file \"fn.[n].[format].mp4\"\n"));
+    printf(_("          n=1,2,.. format = H264/5, ALAC/AAC. Default fn=\"recording\"\n"));
+    printf(_("-hls [v]  Support HTTP Live Streaming (HLS), Youtube app video only: \n"));
+    printf(_("          v = 2 or 3 (default 3) optionally selects video player version\n"));
+    printf(_("-lang ... Ranked HLS language preferences (\"fr:pt-BR:..\");\" \" = none\n"));
+    printf(_("-slang ...Ranked HLS subtitle language preferences (overrides -lang)\n"));
+    printf(_("-custom s Restrict HLS resolutions by codec (useful on low-power hosts)\n"));
+    printf(_("-custom   Omit input \"profile string\" s to show its required format\n"));
+    printf(_("-rpi n    Set pre-selected HLS \"profile strings\" on R PI by model code n\n"));
+    printf(_("-rpi      Shows possible Raspberry Pi model codes n for \"-rpi n\"\n"));
+    printf(_("-scrsv n  Screensaver override n: 0=off 1=on while displaying video 2=always on\n"));
+    printf(_("-pin[xxxx]Use a 4-digit pin code to control client access (default: no)\n"));
+    printf(_("          default pin is random: optionally use fixed pin xxxx\n"));
+    printf(_("-p2p      Advertise and accept AirPlay over Apple peer-to-peer (macOS only)\n"));
+    printf(_("          uses a one-time pin; makes UxPlay visible to nearby Apple devices\n"));
+    printf(_("-reg [fn] Keep a register in $HOME/.uxplay.register to verify returning\n"));
+    printf(_("          client pin-registration; (option: use file \"fn\" for this)\n"));
+    printf(_("-pw [pwd] Require use of password to control client access;\n"));
+    printf(_("          (with no pwd, pin entry is required at *each* connection.)\n"));  
+    printf(_("          (option \"-pw\" after \"-pin\" overrides it, and vice versa)\n"));
+    printf(_("-vsync [x]Mirror mode: sync audio to video using timestamps (default)\n"));
+    printf(_("          x is optional audio delay: millisecs, decimal, can be neg.\n"));
+    printf(_("-vsync no Switch off audio/(server)video timestamp synchronization \n"));
+    printf(_("-async [x]Audio-Only mode: sync audio to client video (default: no)\n"));
+    printf(_("-async no Switch off audio/(client)video timestamp synchronization\n"));
+    printf(_("-db l[:h] Set minimum volume attenuation to l dB (decibels, negative);\n"));
+    printf(_("          optional: set maximum to h dB (+ or -) default: -30.0:0.0 dB\n"));
+    printf(_("-taper    Use a \"tapered\" AirPlay volume-control profile\n"));
+    printf(_("-vol <v>  Set initial audio-streaming volume: range [mute=0.0:1.0=full]\n")); 
+    printf(_("-s wxh[@r]Request to client for video display resolution [refresh_rate]\n")); 
+    printf(_("          default 1920x1080[@60] (or 3840x2160[@60] with -h265 option)\n"));
+    printf(_("-o        Set display \"overscanned\" mode on (not usually needed)\n"));
+    printf(_("-fs       Full-screen (only with X11, Wayland, VAAPI, D3D11/12, kms)\n"));
+    printf(_("-p        Use legacy ports UDP 6000:6001:7011 TCP 7000:7001:7100\n"));
+    printf(_("-p n      Use TCP and UDP ports n,n+1,n+2. range %d-%d\n"), LOWEST_ALLOWED_PORT, HIGHEST_PORT);
+    printf(_("          use \"-p n1,n2,n3\" to set each port, \"n1,n2\" for n3 = n2+1\n"));
+    printf(_("          \"-p tcp n\" or \"-p udp n\" sets TCP or UDP ports separately\n"));
+    printf(_("-avdec    Force software h264 video decoding with libav decoder\n")); 
+    printf(_("-vp ...   Choose the GSteamer h264 parser: default \"h264parse\"\n"));
+    printf(_("-vd ...   Choose the GStreamer h264 decoder; default \"decodebin\"\n"));
+    printf(_("          choices: (software) avdec_h264; (hardware) v4l2h264dec,\n"));
+    printf(_("          nvdec, nvh264dec, vaapih264dec, vtdec,etc.\n"));
+    printf(_("          choices: avdec_h264,vaapih264dec,nvdec,nvh264dec,v4l2h264dec\n"));
+    printf(_("-vc ...   Choose the GStreamer videoconverter; default \"videoconvert\"\n"));
+    printf(_("          another choice when using v4l2h264dec: v4l2convert\n"));
+    printf(_("-vs ...   Choose the GStreamer videosink; default \"autovideosink\"\n"));
+    printf(_("          some choices: ximagesink,xvimagesink,vaapisink,glimagesink,\n"));
+    printf(_("          gtksink,waylandsink,kmssink,fbdevsink,osxvideosink,\n"));
+    printf(_("          d3d11videosink,d3d12videosink, etc.\n"));
+    printf(_("-vs 0     Streamed audio only, with no video display window\n"));
+    printf(_("-vrtp pl  Use rtph26[4,5]pay to send decoded video elsewhere: \"pl\"\n"));
+    printf(_("          is the remaining pipeline, starting with rtph26*pay options:\n"));
+    printf(_("          e.g. \"config-interval=1 ! udpsink host=127.0.0.1 port=5000\"\n"));
+    printf(_("          Writes output to \"fn.N.mp4\"\n"));
+    printf(_("-v4l2     Use Video4Linux2 for GPU hardware h264 decoding\n"));
+    printf(_("-bt709    Sometimes needed for Raspberry Pi models using Video4Linux2 \n"));
+    printf(_("-srgb     Display \"Full range\" [0-255] color, not \"Limited Range\"[16-235]\n"));
+    printf(_("          This is a workaround for a GStreamer problem, until it is fixed\n"));
+    printf(_("-srgb no  Disable srgb option (use when enabled by default: Linux, *BSD)\n"));
+    printf(_("-as ...   Choose the GStreamer audiosink; default \"autoaudiosink\"\n"));
+    printf(_("          some choices:pulsesink,alsasink,pipewiresink,jackaudiosink,\n"));
+    printf(_("          osssink,oss4sink,osxaudiosink,wasapisink,directsoundsink.\n"));
+    printf(_("-as 0     (or -a)  Turn audio off, streamed video only\n"));
+    printf(_("-artp pl  Use rtpL16pay to send decoded audio elsewhere: \"pl\"\n"));
+    printf(_("          is the remaining pipeline, starting with rtpL16pay options:\n"));
+    printf(_("          e.g. \"pt=96 ! udpsink host=127.0.0.1 port=5002\"\n"));
+    printf(_("-al x     Audio latency in seconds (default 0.25) reported to client.\n"));
+    printf(_("-ca [<fn>]In Audio (ALAC) mode, render cover-art [or write to file <fn>]\n"));
+    printf(_("-md <fn>  In Airplay Audio (ALAC) mode, write metadata text to file <fn>\n"));
+    printf(_("-reset n  Reset after n seconds of client silence (default n=%d, 0=never)\n"), MISSED_FEEDBACK_LIMIT);
+    printf(_("-nofreeze Do NOT leave frozen screen in place after reset\n"));
+    printf(_("-nc       Do NOT  Close video window when client stops mirroring\n"));
+    printf(_("-nc no    Cancel the -nc option (DO close video window) \n"));
+    printf(_("-nohold   Drop current connection when new client connects.\n"));
+    printf(_("-restrict Restrict clients to those specified by \"-allow <deviceID>\"\n"));
+    printf(_("          UxPlay displays deviceID when a client attempts to connect\n"));
+    printf(_("          Use \"-restrict no\" for no client restrictions (default)\n"));
+    printf(_("-allow <i>Permit deviceID = <i> to connect if restrictions are imposed\n"));
+    printf(_("-block <i>Always block connections from deviceID = <i>\n"));
+    printf(_("-FPSdata  Show video-streaming performance reports sent by client.\n"));
+    printf(_("-fps n    Set maximum allowed streaming framerate, default 30\n"));
+    printf(_("-f {H|V|I}Horizontal|Vertical flip, or both=Inversion=rotate 180 deg\n"));
+    printf(_("-r {R|L}  Rotate 90 degrees Right (cw) or Left (ccw)\n"));
+    printf(_("-m [mac]  Set MAC address (also Device ID);use for concurrent UxPlays\n"));
+    printf(_("          if mac xx:xx:xx:xx:xx:xx is not given, a random MAC is used\n"));
+    printf(_("-key [fn] Store private key in $HOME/.uxplay.pem (or in file \"fn\")\n"));
+    printf(_("-dacp [fn]Export client DACP information to file $HOME/.uxplay.dacp\n"));
+    printf(_("          (option to use file \"fn\" instead); used for client remote\n"));
+    printf(_("-ble [fn] For BluetoothLE beacon: write data to file ~/.uxplay.ble\n"));
+    printf(_("          optional: write to file \"fn\" (\"fn\" = \"off\" to cancel)\n"));
+    printf(_("-d [n]    Enable debug logging; optional: n=1 to skip normal packet data\n"));
+    printf(_("-vdmp [n] Dump h264 video output to \"fn.h264\"; fn=\"videodump\",change\n"));
+    printf(_("          with \"-vdmp [n] filename\". If [n] is given, file fn.x.h264\n"));
+    printf(_("          x=1,2,.. opens whenever a new SPS/PPS NAL arrives, and <=n\n"));
+    printf(_("          NAL units are dumped.\n"));
+    printf(_("-admp [n] Dump audio output to \"fn.x.fmt\", fmt ={aac, alac, aud}, x\n"));
+    printf(_("          =1,2,..; fn=\"audiodump\"; change with \"-admp [n] filename\".\n"));
+    printf(_("          x increases when audio format changes. If n is given, <= n\n"));
+    printf(_("          audio packets are dumped. \"aud\"= unknown format.\n"));
+    printf(_("-v        Displays version information\n"));
+    printf(_("-h        Displays this help\n"));
+    printf(_("-zh       Show help and messages in Simplified Chinese (same as --zh)\n"));
+    printf(_("-en       Show help and messages in English (same as --en)\n"));
+    printf(_("-rc fn    Read startup options from file \"fn\" instead of ~/.uxplayrc, etc\n"));
+    printf(_("Startup options in $UXPLAYRC, ~/.uxplayrc, or ~/.config/uxplayrc are\n"));
+    printf(_("applied first (command-line options may modify them): format is one \n"));
+    printf(_("option per line, no initial \"-\"; lines starting with \"#\" are ignored.\n"));
+    printf(_("The language can also be selected with the environment variable\n"
+           "UXPLAY_LANG=zh|en, or automatically from LANG/LC_ALL when it starts with \"zh\".\n"));
 }
 
 static bool option_has_value(const int i, const int argc, std::string option, const char *next_arg) {
@@ -1572,14 +1577,18 @@ static void parse_arguments (int argc, char *argv[]) {
     // Parse arguments
     for (int i = 1; i < argc; i++) {
         if (!is_utf8(argv[i], NULL)) {
-            fprintf(stderr,"Error: detected a non-ascii or non-UTF-8 string \"%s\""
-                    "while parsing input arguments", argv[i]);
+            fprintf(stderr,_("Error: detected a non-ascii or non-UTF-8 string \"%s\""
+                    "while parsing input arguments"), argv[i]);
             exit(0);
         }
     }
     for (int i = 1; i < argc; i++) {
         std::string arg(argv[i]);
-        if (arg == "-rc") {
+        if (arg == "-zh" || arg == "--zh") {
+            i18n_init(UXPLAY_LANG_ZH);
+        } else if (arg == "-en" || arg == "--en") {
+            i18n_init(UXPLAY_LANG_EN);
+        } else if (arg == "-rc") {
             i++;  //specifies startup file: has already been processed
         } else if (arg == "-allow") {
             if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
@@ -1605,14 +1614,14 @@ static void parse_arguments (int argc, char *argv[]) {
             server_name.erase();
             bool utf8 = is_utf8(argv[++i], &ascii);
             if (!utf8) {
-                fprintf(stderr, "invalid (non-UTF-8/ascii) server name in \"-n %s\"", argv[i]);
+                fprintf(stderr, _("invalid (non-UTF-8/ascii) server name in \"-n %s\""), argv[i]);
                 exit(1);
             }
             server_name = std::string(argv[i]);
             if (!ascii) {
                 server_name_is_utf8 = true;
-                printf("WARNING: a non-ascii (UTF-8) server-name \"%s\" was specified:"
-                       " ensure correct locale settings to display it\n",server_name.c_str()); 
+                printf(_("WARNING: a non-ascii (UTF-8) server-name \"%s\" was specified:"
+                       " ensure correct locale settings to display it\n"),server_name.c_str()); 
             }
         } else if (arg == "-nh") {
             do_append_hostname = false;
@@ -1628,11 +1637,11 @@ static void parse_arguments (int argc, char *argv[]) {
 
             unsigned int code = 0;
             if (i == argc -1 ||  argv[i+1][0] == '-') {
-                fprintf(stderr,"invalid: \"-rpi\" must be followed by a model code:\n%s\n", error_text.c_str());
+                fprintf(stderr,_("invalid: \"-rpi\" must be followed by a model code:\n%s\n"), error_text.c_str());
                 exit(0);
             }
             if (!get_value(argv[++i], &code)) {
-                fprintf(stderr, "invalid \"-rpi %s\"; -rpi must be followed by an integer model code:\n%s\n", argv[i], error_text.c_str());
+                fprintf(stderr, _("invalid \"-rpi %s\"; -rpi must be followed by an integer model code:\n%s\n"), argv[i], error_text.c_str());
                 exit(1);
             }
 	    raspberry_pi_hls_support = true;
@@ -1656,7 +1665,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 pi_model = PI_5_ACTIVE_COOLING;
                 break;
             default:
-                fprintf(stderr,"invalid Raspberry Pi model code %s:\n%s\n", argv[i], error_text.c_str());
+                fprintf(stderr,_("invalid Raspberry Pi model code %s:\n%s\n"), argv[i], error_text.c_str());
                 exit(1);
             }
         } else if (arg == "-custom") {
@@ -1674,7 +1683,7 @@ static void parse_arguments (int argc, char *argv[]) {
               "   example above) is ignored (enclose the string in quotes if it includes empty spaces).\n";
 
             if (i == argc -1 ||  argv[i+1][0] == '-') {
-                fprintf(stderr,"invalid \"-custom\" must be followed by s string encoding maximum HLS resolution choices:\n%s\n", text.c_str());
+                fprintf(stderr,_("invalid \"-custom\" must be followed by s string encoding maximum HLS resolution choices:\n%s\n"), text.c_str());
                 exit(0);
             }
             std::string str = argv[++i];
@@ -1683,10 +1692,10 @@ static void parse_arguments (int argc, char *argv[]) {
             str.erase(std::remove_if(str.begin(), str.end(), [](unsigned char x) {return std::isspace(x); }), str.end());
             custom_profile_string = str;
             if (!validate_custom_profile_string(custom_profile_string.c_str())) {
-                fprintf(stderr,"*** invalid custom HLS profile string \"%s\"\n\n%s\n", argv[i], text.c_str());
+                fprintf(stderr,_("*** invalid custom HLS profile string \"%s\"\n\n%s\n"), argv[i], text.c_str());
                 exit(1);
             } else {
-                printf("custom HLS profile string is valid, stored as: \"%s\"\n",custom_profile_string.c_str());
+                printf(_("custom HLS profile string is valid, stored as: \"%s\"\n"),custom_profile_string.c_str());
             }
         } else if (arg == "-async") {
             audio_sync = true;
@@ -1703,7 +1712,7 @@ static void parse_arguments (int argc, char *argv[]) {
                     if (n > -SECOND_IN_USECS && n < SECOND_IN_USECS) {
                         audio_delay_alac = n * 1000; /* units are nsecs */
                     } else {
-                        fprintf(stderr, "invalid -async %s: requested delays must be smaller than +/- 1000 millisecs\n", argv[i] );
+                        fprintf(stderr, _("invalid -async %s: requested delays must be smaller than +/- 1000 millisecs\n"), argv[i] );
                         exit (1);
                     }
                 }
@@ -1712,13 +1721,13 @@ static void parse_arguments (int argc, char *argv[]) {
             if (!option_has_value(i, argc, argv[i], argv[i+1])) exit(1);
             unsigned int n = 0;
             if (!get_value(argv[++i], &n) || n > 2) {
-                fprintf(stderr, "invalid \"-scrsv %s\"; values 0, 1, 2 allowed\n", argv[i]);
+                fprintf(stderr, _("invalid \"-scrsv %s\"; values 0, 1, 2 allowed\n"), argv[i]);
                 exit(1);
             }
 #ifdef DBUS
             scrsv = n;
 #else
-            fprintf(stderr,"invalid: option \"-scrsv\" is currently only implemented for Linux/*BSD systems with D-Bus service\n");
+            fprintf(stderr,_("invalid: option \"-scrsv\" is currently only implemented for Linux/*BSD systems with D-Bus service\n"));
             exit(1);
 #endif
         } else if (arg == "-vsync") {
@@ -1736,7 +1745,7 @@ static void parse_arguments (int argc, char *argv[]) {
                     if (n > -SECOND_IN_USECS && n < SECOND_IN_USECS) {
                         audio_delay_aac = n * 1000;     /* units are nsecs */
                     } else {
-                        fprintf(stderr, "invalid -vsync %s: requested delays must be smaller than +/- 1000 millisecs\n", argv[i]);
+                        fprintf(stderr, _("invalid -vsync %s: requested delays must be smaller than +/- 1000 millisecs\n"), argv[i]);
                         exit (1);
                     }
                 }
@@ -1745,7 +1754,7 @@ static void parse_arguments (int argc, char *argv[]) {
             if (!option_has_value(i, argc, argv[i], argv[i+1])) exit(1);
             std::string value(argv[++i]);
             if (!get_display_settings(value, &display[0], &display[1], &display[2])) {
-                fprintf(stderr, "invalid \"-s %s\"; -s wxh : max w,h=9999; -s wxh@r : max r=255\n",
+                fprintf(stderr, _("invalid \"-s %s\"; -s wxh : max w,h=9999; -s wxh@r : max r=255\n"),
                         argv[i]);
                 exit(1);
             }
@@ -1753,7 +1762,7 @@ static void parse_arguments (int argc, char *argv[]) {
             if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
             unsigned int n = 255;
             if (!get_value(argv[++i], &n)) {
-                fprintf(stderr, "invalid \"-fps %s\"; -fps n : max n=255, default n=30\n", argv[i]);
+                fprintf(stderr, _("invalid \"-fps %s\"; -fps n : max n=255, default n=30\n"), argv[i]);
                 exit(1);
             }
             display[3] = (unsigned short) n;
@@ -1762,13 +1771,13 @@ static void parse_arguments (int argc, char *argv[]) {
         } else if (arg == "-f") {
             if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
             if (!get_videoflip(argv[++i], &videoflip[0])) {
-                fprintf(stderr,"invalid \"-f %s\" , unknown flip type, choices are H, V, I\n",argv[i]);
+                fprintf(stderr,_("invalid \"-f %s\" , unknown flip type, choices are H, V, I\n"),argv[i]);
                 exit(1);
             }
         } else if (arg == "-r") {
             if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
             if (!get_videorotate(argv[++i], &videoflip[1])) {
-                fprintf(stderr,"invalid \"-r %s\" , unknown rotation  type, choices are R, L\n",argv[i]);
+                fprintf(stderr,_("invalid \"-r %s\" , unknown rotation  type, choices are R, L\n"),argv[i]);
                 exit(1);
             }
         } else if (arg == "-p") {
@@ -1780,7 +1789,7 @@ static void parse_arguments (int argc, char *argv[]) {
             std::string value(argv[++i]);
             if (value == "tcp" || value == "udp") {
                 if (i == argc - 1 || argv[i + 1][0] == '-') {
-                    fprintf(stderr,"invalid \"-p %s\": missing second argument (ports must be specified after \"%s\") \n",
+                    fprintf(stderr,_("invalid \"-p %s\": missing second argument (ports must be specified after \"%s\") \n"),
                             argv[i], argv[i]);
                     exit (1);
                 }
@@ -1804,8 +1813,8 @@ static void parse_arguments (int argc, char *argv[]) {
                     mac_address = argv[i];
                     use_random_hw_addr = false;
                 } else {
-                    fprintf(stderr,"invalid mac address \"%s\": address must have form"
-                            " \"xx:xx:xx:xx:xx:xx\", x = 0-9, A-F or a-f\n", argv[i]);
+                    fprintf(stderr,_("invalid mac address \"%s\": address must have form"
+                            " \"xx:xx:xx:xx:xx:xx\", x = 0-9, A-F or a-f\n"), argv[i]);
                     exit(1);
                 }
             } else {
@@ -1817,7 +1826,7 @@ static void parse_arguments (int argc, char *argv[]) {
             if (i < argc - 1 && *argv[i+1] != '-') {
                 unsigned int n = 1;
                 if (!get_value(argv[++i], &n)) {
-                    fprintf(stderr, "invalid \"-d %s\"; -d n : max n=1 (suppress packet data in debug output)\n", argv[i]);
+                    fprintf(stderr, _("invalid \"-d %s\"; -d n : max n=1 (suppress packet data in debug output)\n"), argv[i]);
                     exit(1);
                 }
                 debug_log = true;
@@ -1830,7 +1839,7 @@ static void parse_arguments (int argc, char *argv[]) {
             print_info(argv[0]);
             exit(0);
         } else if (arg == "-v") {
-            printf("UxPlay version %s; for help, use option \"-h\"\n", VERSION);
+            printf(_("UxPlay version %s; for help, use option \"-h\"\n"), VERSION);
             exit(0);
         } else if (arg == "-vp") {
             if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
@@ -1859,8 +1868,8 @@ static void parse_arguments (int argc, char *argv[]) {
             audiosink.erase();
             audiosink.append(argv[++i]);
         } else if (arg == "-t") {
-            fprintf(stderr,"The uxplay option \"-t\" has been removed: it was a workaround for an  Avahi issue.\n");
-            fprintf(stderr,"The correct solution is to open network port UDP 5353 in the firewall for mDNS queries\n");
+            fprintf(stderr,_("The uxplay option \"-t\" has been removed: it was a workaround for an  Avahi issue.\n"));
+            fprintf(stderr,_("The correct solution is to open network port UDP 5353 in the firewall for mDNS queries\n"));
             exit(1);
         } else if (arg == "-nc") {
             new_window_closing_behavior = false;
@@ -1890,24 +1899,24 @@ static void parse_arguments (int argc, char *argv[]) {
         } else if (arg == "-reset") {
             if (!option_has_value(i, argc, arg, argv[i+1])) exit(1);
             /* now using feedback  (every 1 sec ) instead of ntp timeouts (every 3 secs) to detect offline client and reset connections */
-            fprintf(stderr,"*** NOTE CHANGE: -reset n now means reset n seconds (not 3n seconds) after client goes offline\n");	  
+            fprintf(stderr,_("*** NOTE CHANGE: -reset n now means reset n seconds (not 3n seconds) after client goes offline\n"));	  
             missed_feedback_limit = 0;
             if (!get_value(argv[++i], &missed_feedback_limit)) {
-                fprintf(stderr, "invalid \"-reset %s\"; -reset n must have n >= 0,  default n = %d seconds\n", argv[i], MISSED_FEEDBACK_LIMIT);
+                fprintf(stderr, _("invalid \"-reset %s\"; -reset n must have n >= 0,  default n = %d seconds\n"), argv[i], MISSED_FEEDBACK_LIMIT);
                 exit(1);
             }
 	} else if (arg == "-vrtp") {
 	  if (!option_has_value(i, argc, arg, argv[i+1])) {
-	    fprintf(stderr,"option \"-vrtp\" must be followed by a pipeline for sending the video stream:\n"
-		    "e.g., \"<rtph26[4,5]pay options> ! udpsink host=127.0.0.1 port -= 5000\"\n");
+	    fprintf(stderr,_("option \"-vrtp\" must be followed by a pipeline for sending the video stream:\n"
+		    "e.g., \"<rtph26[4,5]pay options> ! udpsink host=127.0.0.1 port -= 5000\"\n"));
 	    exit(1);
           }
 	  rtp_pipeline.erase();
 	  rtp_pipeline.append(argv[++i]);
 	} else if (arg == "-artp") {
 	  if (!option_has_value(i, argc, arg, argv[i+1])) {
-	    fprintf(stderr,"option \"-artp\" must be followed by a pipeline for sending the audio stream:\n"
-		    "e.g., \"<rtpL16pay options> ! udpsink host=127.0.0.1 port=5002\"\n");
+	    fprintf(stderr,_("option \"-artp\" must be followed by a pipeline for sending the audio stream:\n"
+		    "e.g., \"<rtpL16pay options> ! udpsink host=127.0.0.1 port=5002\"\n"));
 	    exit(1);
           }
 	  audio_rtp_pipeline.erase();
@@ -1918,7 +1927,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 unsigned int n = 0;
                 if (get_value (argv[++i], &n)) {
                     if (n == 0) {
-                        fprintf(stderr, "invalid \"-vdmp 0 %s\"; -vdmp n  needs a non-zero value of n\n", argv[i]);
+                        fprintf(stderr, _("invalid \"-vdmp 0 %s\"; -vdmp n  needs a non-zero value of n\n"), argv[i]);
                         exit(1);
                     }
                     video_dump_limit = n;
@@ -1932,7 +1941,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 }
                 const char *fn = video_dumpfile_name.c_str();
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-vdmp <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-vdmp <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
                 }   		
             }
@@ -1943,7 +1952,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 mux_filename.append(argv[++i]);
                 const char *fn = mux_filename.c_str();
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-mp4 <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-mp4 <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
                 }
             }
@@ -1953,7 +1962,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 unsigned int n = 0;
                 if (get_value (argv[++i], &n)) {
                     if (n == 0) {
-                        fprintf(stderr, "invalid \"-admp 0 %s\"; -admp n  needs a non-zero value of n\n", argv[i]);
+                        fprintf(stderr, _("invalid \"-admp 0 %s\"; -admp n  needs a non-zero value of n\n"), argv[i]);
                         exit(1);
                     }
                     audio_dump_limit = n;
@@ -1967,7 +1976,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 }
                 const char *fn = audio_dumpfile_name.c_str();
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-admp <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-admp <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
                 }
             }
@@ -1978,7 +1987,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 const char *fn = coverart_filename.c_str();
                 render_coverart = false;
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-ca <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-ca <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
                 }   
             } else {
@@ -1990,11 +1999,11 @@ static void parse_arguments (int argc, char *argv[]) {
                 metadata_filename.append(argv[++i]);
                 const char *fn = metadata_filename.c_str();
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-md <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-md <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
                 }   
             } else {
-                fprintf(stderr,"option -md must be followed by a filename for metadata text output\n");
+                fprintf(stderr,_("option -md must be followed by a filename for metadata text output\n"));
                 exit(1);
             }
         } else if (arg  == "-ble" ) {
@@ -2004,7 +2013,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 if (strlen(argv[i]) != 3 || strncmp(argv[i], "off", 3)) { 
                     ble_filename.append(argv[i]);
                     if (!file_has_write_access(argv[i])) {
-                        fprintf(stderr, "%s cannot be written to:\noption \"-ble<fn>\" must be to a file with write access\n", argv[i]);
+                        fprintf(stderr, _("%s cannot be written to:\noption \"-ble<fn>\" must be to a file with write access\n"), argv[i]);
                         exit(1);
                     }
                 }
@@ -2014,11 +2023,11 @@ static void parse_arguments (int argc, char *argv[]) {
                     ble_filename = homedir;
                     ble_filename.append("/.uxplay.ble");
                     if (!file_has_write_access(ble_filename.c_str())) {
-                        fprintf(stderr, "%s cannot be written to\n",ble_filename.c_str()) ;
+                        fprintf(stderr, _("%s cannot be written to\n"),ble_filename.c_str()) ;
                         exit(1);
                     }
                 } else {
-                    fprintf(stderr,"failed to obtain home directory\n");
+                    fprintf(stderr,_("failed to obtain home directory\n"));
                     exit(1);
                 }
             }
@@ -2045,8 +2054,8 @@ static void parse_arguments (int argc, char *argv[]) {
                     continue;
                 }
             }
-            fprintf(stderr, "invalid -al %s: value must be a decimal time offset in seconds, range [0,10]\n"
-                    "(like 5 or 4.8, which will be converted to a whole number of microseconds)\n", argv[i]);
+            fprintf(stderr, _("invalid -al %s: value must be a decimal time offset in seconds, range [0,10]\n"
+                    "(like 5 or 4.8, which will be converted to a whole number of microseconds)\n"), argv[i]);
             exit(1);
         } else if (arg == "-pin") {
             setup_legacy_pairing = true;
@@ -2054,7 +2063,7 @@ static void parse_arguments (int argc, char *argv[]) {
             if (i < argc - 1 && *argv[i+1] != '-') {
                 unsigned int n = 9999;
                 if (!get_value(argv[++i], &n)) {
-                    fprintf(stderr, "invalid \"-pin %s\"; -pin nnnn : nnnn range [0001:9999], (4 digits)\n", argv[i]);
+                    fprintf(stderr, _("invalid \"-pin %s\"; -pin nnnn : nnnn range [0001:9999], (4 digits)\n"), argv[i]);
                     exit(1);
                 }
                 pin = n + 10000;
@@ -2079,7 +2088,7 @@ static void parse_arguments (int argc, char *argv[]) {
 		exit(1);
 	    }
 #else
-	    fprintf(stderr, "invalid: the \"-p2p\" option is only available on macOS hosts with UxPlay compiled to use Bonjour services\n");      
+	    fprintf(stderr, _("invalid: the \"-p2p\" option is only available on macOS hosts with UxPlay compiled to use Bonjour services\n"));      
             exit(1);
 #endif
 	    
@@ -2090,7 +2099,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 pairing_register.append(argv[++i]);
                 const char * fn = pairing_register.c_str();
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-reg <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-reg <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
       }   
             }
@@ -2100,11 +2109,11 @@ static void parse_arguments (int argc, char *argv[]) {
                 keyfile.append(argv[++i]);
                 const char * fn = keyfile.c_str();
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-key <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-key <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
                 }   
             } else {
-	        //                fprintf(stderr, "option \"-key <fn>\" requires a path <fn> to a file for persistent key storage\n");
+	        //                fprintf(stderr, _("option \"-key <fn>\" requires a path <fn> to a file for persistent key storage\n"));
 	        // exit(1);
                 keyfile.erase();
                 keyfile.append("0");
@@ -2116,7 +2125,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 password.append(argv[++i]);
                 pin_pw = 2;
                 if (password.size() < min_password_length) {
-                    fprintf(stderr, "invalid client-access password \"%s\": length must be at least %u characters\n", password.c_str(), min_password_length);
+                    fprintf(stderr, _("invalid client-access password \"%s\": length must be at least %u characters\n"), password.c_str(), min_password_length);
                     exit(1);
                 }
             } else {
@@ -2128,7 +2137,7 @@ static void parse_arguments (int argc, char *argv[]) {
                 dacpfile.append(argv[++i]);
                 const char *fn = dacpfile.c_str();
                 if (!file_has_write_access(fn)) {
-                    fprintf(stderr, "%s cannot be written to:\noption \"-dacp <fn>\" must be to a file with write access\n", fn);
+                    fprintf(stderr, _("%s cannot be written to:\noption \"-dacp <fn>\" must be to a file with write access\n"), fn);
                     exit(1);
                 }   
             } else {
@@ -2142,13 +2151,13 @@ static void parse_arguments (int argc, char *argv[]) {
             double db1, db2;
             const char *text = "db value must be \"low\" or \"low:high\", low < 0 and high > low are decibel gains";
             if (i == argc - 1) {
-                fprintf(stderr,"invalid \"-db\": this option requires a value: %s\n", text) ;
+                fprintf(stderr,_("invalid \"-db\": this option requires a value: %s\n"), text) ;
                 exit(1);
             }
             char *end1, *end2;
             db1 = strtod(argv[i+1], &end1);
             if (end1 == argv[i+1] && argv[i+1][0] == '-') {
-                fprintf(stderr,"invalid \"-db\": this option requires a value: %s\n", text) ;
+                fprintf(stderr,_("invalid \"-db\": this option requires a value: %s\n"), text) ;
             exit(1);
             }
             if (db1 < 0.0 && *end1 == ':') {
@@ -2161,13 +2170,13 @@ static void parse_arguments (int argc, char *argv[]) {
                 db2 = 0.0;
             }
             if (db_bad) {
-                fprintf(stderr, "invalid \"-db %s\": %s\n", argv[i+1], text);
+                fprintf(stderr, _("invalid \"-db %s\": %s\n"), argv[i+1], text);
                 exit(1);
             }
             i++;
             db_low = db1;
             db_high = db2;
-            printf("db range %f:%f\n", db_low, db_high);
+            printf(_("db range %f:%f\n"), db_low, db_high);
         } else if (arg ==  "-vol") {
             if (!option_has_value(i, argc, arg, argv[i+1])) {
                 exit(1);
@@ -2185,16 +2194,16 @@ static void parse_arguments (int argc, char *argv[]) {
                     } else {
                         double db_flat = -30.0  + 30.0*frac;
                         //double db = 10.0 * (log10(frac) / log10(2.0));  //tapered 
-                        //printf("db %f db_flat %f \n", db, db_flat);
+                        //printf(_("db %f db_flat %f \n"), db, db_flat);
                         //db = (db > db_flat) ? db : db_flat;
                         initial_volume = db_flat;
                     }
-                    printf("initial_volume attenuation %f db\n", initial_volume);
+                    printf(_("initial_volume attenuation %f db\n"), initial_volume);
                     vol_bad = false;
                 }
             }
             if (vol_bad) {
-                fprintf(stderr, "invalid \"-vol %s\", value must be between 0.0 (mute) and 1.0 (full volume)\n", argv[i+1]);  
+                fprintf(stderr, _("invalid \"-vol %s\", value must be between 0.0 (mute) and 1.0 (full volume)\n"), argv[i+1]);  
                 exit(1);
             }
             i++;
@@ -2203,7 +2212,7 @@ static void parse_arguments (int argc, char *argv[]) {
             if (i < argc - 1 && *argv[i+1] != '-') {
                 unsigned int n = 3;
                 if (!get_value(argv[++i], &n) || n < 2) {
-                    fprintf(stderr, "invalid \"-hls %s\"; -hls n only allows \"playbin\" video player versions 2 or 3\n", argv[i]);
+                    fprintf(stderr, _("invalid \"-hls %s\"; -hls n only allows \"playbin\" video player versions 2 or 3\n"), argv[i]);
                     exit(1);
                 }
                 playbin_version = (guint) n;
@@ -2225,7 +2234,7 @@ static void parse_arguments (int argc, char *argv[]) {
         } else if (arg == "-nofreeze") {
             nofreeze = true;
         } else {
-            fprintf(stderr, "unknown option %s, stopping (for help use option \"-h\")\n",argv[i]);
+            fprintf(stderr, _("unknown option %s, stopping (for help use option \"-h\")\n"),argv[i]);
             exit(1);
         }
     }
@@ -2237,7 +2246,7 @@ static void process_metadata(int count, const char *dmap_tag, const unsigned cha
      * The DMAP item begins with a 4-character (4-letter) "dmap_tag" string that identifies the type.               */
 
     if (debug_log) {
-        printf("%d: dmap_tag [%s], %d\n", count, dmap_tag, datalen);
+        printf(_("%d: dmap_tag [%s], %d\n"), count, dmap_tag, datalen);
     }
 
     /* UTF-8 String-type DMAP tags seen in Apple Music Radio are processed here.   *
@@ -2353,7 +2362,7 @@ static void process_metadata(int count, const char *dmap_tag, const unsigned cha
     if (dmap_type == 9) {
         char *str = (char *) calloc(datalen + 1, sizeof(char));
         if (!str) {
-            printf("Memeory allocation failure (str)\n");
+            printf(_("Memeory allocation failure (str)\n"));
             exit(1);
         }
         memcpy(str, metadata, datalen);
@@ -2706,7 +2715,7 @@ extern "C" void export_dacp(void *cls, const char *active_remote, const char *da
       if (dacpfile.length()) {
         FILE *fp = fopen(dacpfile.c_str(), "w");
         if (fp) {
-            fprintf(fp,"%s\n%s\n", dacp_id, active_remote);
+            fprintf(fp,_("%s\n%s\n"), dacp_id, active_remote);
             fclose(fp);
         } else {
             LOGE("failed to open DACP export file \"%s\"", dacpfile.c_str());
@@ -3000,7 +3009,7 @@ extern "C" void audio_set_metadata(void *cls, const void *buffer, int buflen) {
     int datalen;
     int count = 0;
 
-    printf("====================Audio Metadata==================\n");
+    printf(_("====================Audio Metadata==================\n"));
 
     if (buflen < 8) {
         LOGE("received invalid metadata, length %d < 8", buflen);
@@ -3060,7 +3069,7 @@ extern "C" void register_client(void *cls, const char *device_id, const char *cl
             struct tm *tm_info = localtime(&raw_time);
             char time_str[20];
             strftime(time_str, sizeof(time_str), "%Y-%m-%d %H:%M:%S", tm_info);
-            fprintf(fp, "%s,%s,%s,%s\n", client_pk, time_str, device_id, client_name);
+            fprintf(fp, _("%s,%s,%s,%s\n"), client_pk, time_str, device_id, client_name);
             fclose(fp);
         }
     }
@@ -3278,7 +3287,7 @@ static void read_config_file(const char * filename, const char * uxplay_name) {
     options.push_back(uxplay_name);
     std::ifstream file(config_file);
     if (file.is_open()) {
-        fprintf(stdout,"UxPlay: reading configuration from  %s\n", config_file.c_str());
+        fprintf(stdout,_("UxPlay: reading configuration from  %s\n"), config_file.c_str());
         std::string line;
         while (std::getline(file, line)) {
             if (line[0] == '#') continue;
@@ -3337,14 +3346,14 @@ static void read_config_file(const char * filename, const char * uxplay_name) {
 	}
         file.close();
     } else {
-        fprintf(stderr,"UxPlay: failed to open configuration file at %s\n", config_file.c_str());
+        fprintf(stderr,_("UxPlay: failed to open configuration file at %s\n"), config_file.c_str());
     }
     if (options.size() > 1) {
 
         int argc = options.size();
         char **argv = (char **) malloc(sizeof(char*) * (argc + 1));
         if (argv == NULL) {
-            printf("Memory allocation failure (argV)\n");
+            printf(_("Memory allocation failure (argV)\n"));
             exit(1);
         }
         for (int i = 0; i < argc; i++) {
@@ -3375,6 +3384,9 @@ int main (int argc, char *argv[]) {
 #endif
     std::vector<char> server_hw_addr;
     std::string config_file = "";
+
+    /* -zh/-en on the command line override this later (see parse_arguments) */
+    i18n_init(UXPLAY_LANG_AUTO);
 
 #ifdef _WIN32
     /* initialise Windows kernel qpc frequency for recv timestamping */
@@ -3436,7 +3448,7 @@ int main (int argc, char *argv[]) {
 
 #if !defined(__APPLE__) || !defined(UXPLAY_HAVE_APPLE_P2P)
     if (peer_to_peer) {
-        fprintf(stderr, "option -p2p requires macOS and the Apple Bonjour DNS-SD backend\n");
+        fprintf(stderr, _("option -p2p requires macOS and the Apple Bonjour DNS-SD backend\n"));
         exit(1);
     }
 #endif

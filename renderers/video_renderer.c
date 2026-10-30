@@ -20,9 +20,11 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
  */
 
+#include <stdio.h>
 #include <gst/gst.h>
 #include <gst/app/gstappsrc.h>
 #include "video_renderer.h"
+#include "../lib/i18n.h"
 #include <gst/video/videooverlay.h>
 
 static uintptr_t external_window_handle = 0;
@@ -229,7 +231,7 @@ GstElement *make_video_sink(const char *videosink, const char *videosink_options
             pval++;
             const gchar *property_name = (const gchar *) token;
             const gchar *value = (const gchar *) pval;
-            g_print("playbin_videosink property: \"%s\" \"%s\"\n", property_name, value);
+            printf(_("playbin_videosink property: \"%s\" \"%s\"\n"), property_name, value);
             gst_util_set_object_arg(G_OBJECT (video_sink), property_name, value);
         }
     }
@@ -831,7 +833,7 @@ static void hls_video_seek_to_start_position(GstElement *pipeline) {
                                      hls_requested_start_position)) {
             hls_requested_start_position = 0;
         } else {
-            g_print("*** seek to requested_start_position failed\n"); 
+            printf(_("*** seek to requested_start_position failed\n")); 
         }
     } 
 }
@@ -859,7 +861,7 @@ static gboolean gstreamer_video_pipeline_bus_callback(GstBus *bus, GstMessage *m
     /* if the bus sending the message is not found, the renderer may already have been destroyed */
     if (type == -1) {
         if (logger_debug) {
-            g_print("GStreamer(UNKNOWN, now destroyed?) bus message: %s %s %s %s\n",
+            printf(_("GStreamer(UNKNOWN, now destroyed?) bus message: %s %s %s %s\n"),
                      GST_MESSAGE_SRC_NAME(message), GST_MESSAGE_TYPE_NAME(message), old_state_name, new_state_name);
         }     
         return TRUE;
@@ -891,7 +893,7 @@ static gboolean gstreamer_video_pipeline_bus_callback(GstBus *bus, GstMessage *m
             g_print("GStreamer %s  bus message %s %s %s %s; position: %" GST_TIME_FORMAT "\n" ,renderer->codec,
                      GST_MESSAGE_SRC_NAME(message), GST_MESSAGE_TYPE_NAME(message), old_state_name, new_state_name, GST_TIME_ARGS(pos));
         } else {
-            g_print("GStreamer %s bus message %s %s %s %s\n", renderer->codec,
+            printf(_("GStreamer %s bus message %s %s %s %s\n"), renderer->codec,
                     GST_MESSAGE_SRC_NAME(message), GST_MESSAGE_TYPE_NAME(message), old_state_name, new_state_name);
         }
         if (name) {
@@ -976,7 +978,7 @@ static gboolean gstreamer_video_pipeline_bus_callback(GstBus *bus, GstMessage *m
             GstState old_state, new_state;
             gst_message_parse_state_changed (message, &old_state, &new_state, NULL);
             if (logger_debug) {
-            g_print ("****** hls_playbin: Element %s changed state from %s to %s.\n", GST_OBJECT_NAME (message->src),
+            printf (_("****** hls_playbin: Element %s changed state from %s to %s.\n"), GST_OBJECT_NAME (message->src),
                      gst_element_state_get_name (old_state),
                      gst_element_state_get_name (new_state));
             } 
@@ -993,10 +995,10 @@ static gboolean gstreamer_video_pipeline_bus_callback(GstBus *bus, GstMessage *m
                     g_print ("Seeking is ENABLED from %" GST_TIME_FORMAT " to %" GST_TIME_FORMAT "\n",
 			     GST_TIME_ARGS (hls_seek_start), GST_TIME_ARGS (hls_seek_end));
                 } else {
-                    g_print ("Seeking is DISABLED for this stream.\n");
+                    printf (_("Seeking is DISABLED for this stream.\n"));
                 }
             } else {
-                g_printerr ("Seeking query failed.");
+                fprintf (stderr, _("Seeking query failed."));
             }
             gst_query_unref (query);
 
@@ -1198,10 +1200,10 @@ void video_renderer_seek(float position) {
                                               (GstSeekFlags)(GST_SEEK_FLAG_FLUSH | GST_SEEK_FLAG_ACCURATE),
                                               seek_position);
     if (result) {
-        g_print("seek succeeded\n");
+        printf(_("seek succeeded\n"));
         gst_element_set_state (renderer->pipeline, GST_STATE_PLAYING);	
     } else {
-        g_print("seek failed\n");
+        printf(_("seek failed\n"));
     }
 }
 

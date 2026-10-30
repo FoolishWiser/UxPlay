@@ -21,6 +21,7 @@
 #include <assert.h>
 
 #include "logger.h"
+#include "i18n.h"
 #include "compat.h"
 
 struct logger_s {
@@ -96,6 +97,9 @@ logger_log(logger_t *logger, int level, const char *fmt, ...)
         return;
     }
     MUTEX_UNLOCK(logger->lvl_mutex);
+
+    /* the message is translated before the arguments are formatted */
+    fmt = tr(fmt);
 
     char buffer[4096] = {0};
     char err_fmt[] = "---logger message is truncated from %d to %d chars---\n";
