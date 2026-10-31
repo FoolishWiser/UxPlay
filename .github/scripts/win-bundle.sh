@@ -11,7 +11,6 @@ set -euo pipefail
 PREFIX_NAME="${1:?usage: win-bundle.sh <ucrt64|mingw64|clangarm64>}"
 PREFIX="/${PREFIX_NAME}"
 OUT="dist/uxplay-windows-${PREFIX_NAME}"
-TMPDEPS="$(mktemp)"
 
 echo "==> prefix: ${PREFIX}"
 echo "==> output: ${OUT}"
@@ -21,28 +20,6 @@ mkdir -p "$OUT/plugins"
 
 cp -f build/uxplay.exe "$OUT/uxplay.exe"
 ls -l "$OUT/uxplay.exe"
-
-# Windows system libraries are always present; never ship them.
-SKIP_RE='^(KERNEL32|kernel32|ntdll|msvcrt|USER32|user32|ADVAPI32|advapi32|WS2_32|ws2_32|SHELL32|shell32|OLE32|ole32|RPCRT4|rpcrt4|GDI32|gdi32|api-ms-.*|ext-ms-.*)\.dll$'
-
-copied=0
-maybe_copy() {
-    local src="$1" base
-    base="$(basename "$src")"
-    [[ "$base" =~ $SKIP_RE ]] && return 1
-    case "$src" in
-        "$PREFIX"/*) ;;
-        *) return 1 ;;
-    esac
-    [ -f "$OUT/$base" ] && return 1
-    [ -f "$src" ] || return 1
-    cp -f "$src" "$OUT/$base"
-    return 0
-}
-
-collect() { # recursive PE dependency list of $1, one MSYS path per line
-    ntldd -R "$1" 2>/dev/null | awk '{print $3}' | grep -i '\.dll' | sed 's|\\|/|g' || true
-}
 
 # Plugins first, so their file names are part of the bundle layout.
 plugin_count=0
@@ -61,28 +38,19 @@ else
     echo "==> plugin scanner: NOT FOUND (relies on system GStreamer)"
 fi
 
-# Dependencies: full recursive closure of the executable and of every
-# bundled plugin. A one-level walk is not enough: e.g. avcodec-63.dll needs
-# swresample-7.dll / libx264-165.dll, and a missing transitive DLL makes the
-# plugin silently fail to load ("gstreamer plugin 'libav' not found" at
-# runtime). ntldd costs ~1-3s per file on Windows, so the plugins are
-# scanned in parallel -- serially this takes 10+ minutes.
-{
-    ntldd -R build/uxplay.exe 2>/dev/null || true
-    ls "$PREFIX"/lib/gstreamer-1.0/*.dll \
-        | xargs -r -P 12 -n 1 ntldd -R 2>/dev/null || true
-} | awk '{print $3}' | grep -i '\.dll' | sed 's|\\|/|g' >"$TMPDEPS" || true
-echo "==> dependency candidates: $(wc -l <"$TMPDEPS")"
-
-while IFS= read -r raw; do
-    [ -n "$raw" ] || continue
-    src="$(cygpath -u "$raw" 2>/dev/null || printf '%s' "$raw")"
-    if maybe_copy "$src"; then
-        copied=$((copied + 1))
-    fi
-done <"$TMPDEPS"
-rm -f "$TMPDEPS"
-echo "==> dlls copied: ${copied}"
+# Dependencies: ship every DLL that lives in $PREFIX/bin. Walking the import
+# graph with ntldd is slow on Windows (1-3s per file, and -R recurses the whole
+# tree: a few hundred files take 10+ minutes) and easy to get wrong -- a
+# missing transitive DLL (avcodec-63.dll needs swresample-7.dll, libx264-165.dll,
+# ...) makes the GStreamer libav plugin fail to load with a confusing
+# "plugin 'libav' not found". Copying the runtime set is instant and complete.
+dlls=0
+for dll in "$PREFIX"/bin/*.dll; do
+    [ -f "$dll" ] || continue
+    cp -f "$dll" "$OUT/"
+    dlls=$((dlls + 1))
+done
+echo "==> dlls copied: ${dlls}"
 
 # Documentation and launchers.
 if [ -f README.zh-CN.md ]; then
