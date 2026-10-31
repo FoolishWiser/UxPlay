@@ -3,8 +3,13 @@ name: Build
 on:
   push:
     branches: [ master, main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ master, main ]
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 env:
   BUILD_TYPE: RelWithDebInfo
@@ -52,6 +57,14 @@ jobs:
           test -x build/uxplay
           ls -la build/uxplay
 
+      - name: Upload Linux binary
+        uses: actions/upload-artifact@v7
+        with:
+          name: uxplay-linux-x86_64
+          path: build/uxplay
+          if-no-files-found: error
+          retention-days: 14
+
   build-macos:
     runs-on: macos-latest
     steps:
@@ -94,17 +107,23 @@ jobs:
   build-windows-intel:
     runs-on: windows-latest
     strategy:
+      fail-fast: false
       matrix:
         msystem: [UCRT64, MINGW64]
         include:
           - msystem: UCRT64
             pkg_prefix: mingw-w64-ucrt-x86_64
             path_prefix: ucrt64
-            extra_pkgs: mingw-w64-ucrt-x86_64-gst-plugins-good
+            extra_pkgs: >-
+              mingw-w64-ucrt-x86_64-gst-plugins-good
+              mingw-w64-ucrt-x86_64-gst-plugins-bad
+              mingw-w64-ucrt-x86_64-gst-libav
+            bundle: true
           - msystem: MINGW64
             pkg_prefix: mingw-w64-x86_64
             path_prefix: mingw64
             extra_pkgs: "" # Bundled inside base packages in old repository mappings
+            bundle: false
     defaults:
       run:
         shell: msys2 {0}
@@ -125,6 +144,7 @@ jobs:
             ${{ matrix.pkg_prefix }}-gstreamer
             ${{ matrix.pkg_prefix }}-gst-plugins-base
             ${{ matrix.pkg_prefix }}-pkg-config
+            ${{ matrix.pkg_prefix }}-ntldd
             ${{ matrix.extra_pkgs }}
             base-devel
 
@@ -143,8 +163,37 @@ jobs:
           test -f build/uxplay.exe
           ls -la build/uxplay.exe
 
+      - name: Show Chinese help (bundle target)
+        if: matrix.bundle
+        run: |
+          ./build/uxplay.exe -zh -h 2>&1 | head -n 20 || true
+
+      - name: Assemble portable bundle
+        if: matrix.bundle
+        run: |
+          bash .github/scripts/win-bundle.sh ${{ matrix.path_prefix }}
+
+      - name: Zip portable bundle
+        if: matrix.bundle
+        shell: pwsh
+        run: |
+          $dir = Get-ChildItem dist -Directory | Select-Object -First 1
+          $zip = "dist/$($dir.Name).zip"
+          Compress-Archive -Path (Join-Path $dir.FullName '*') -DestinationPath $zip -CompressionLevel Optimal
+          Get-Item $zip | Format-List Name, Length
+
+      - name: Upload Windows bundle
+        if: matrix.bundle
+        uses: actions/upload-artifact@v7
+        with:
+          name: uxplay-windows-${{ matrix.path_prefix }}
+          path: dist/*.zip
+          if-no-files-found: error
+          retention-days: 14
+
   build-windows-arm64:
     runs-on: windows-11-arm
+    continue-on-error: true
     strategy:
       matrix:
         msystem: [CLANGARM64]
@@ -189,4 +238,26 @@ jobs:
           test -f build/uxplay.exe
           ls -la build/uxplay.exe
 
+  release:
+    needs: [build-windows-intel]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
 
+      - name: Download bundles
+        uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ls -la artifacts
+          gh release create "${GITHUB_REF_NAME}" artifacts/*.zip \
+            --repo "${GITHUB_REPOSITORY}" \
+            --title "UxPlay 简体中文版 ${GITHUB_REF_NAME}" \
+            --notes-file .github/RELEASE_NOTES.md
