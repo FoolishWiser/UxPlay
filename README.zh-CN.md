@@ -1026,6 +1026,9 @@ Mac 在使用 X11 时需要较低的分辨率：`uxplay -s 800x600`。）*
 <a name="building-uxplay-on-microsoft-windows-using-msys2-with-the-mingw-64-compiler"></a>
 ## 在 Microsoft Windows 上使用 MSYS2 搭配 MinGW-64 编译器编译 UxPlay。
 
+> **汉化 fork 附带的预编译包**：如果只想直接使用、不想自己编译，可以到[Releases](https://github.com/FoolishWiser/UxPlay/releases) 下载 `uxplay-windows-ucrt64.zip`（由 GitHub Actions 在 MSYS2 UCRT64 环境自动构建，包内已带运行所需的 DLL、GStreamer 插件与插件扫描器，以及 `run-zh.bat` / `run-en.bat` 启动脚本），解压后双击 `run-zh.bat` 即可；以下内容才是从源码自行编译的步骤。
+
+
 -   已在 64 位 x86_64 的 Windows 10 和 11 上、以及 ARM 上的 Windows 11 测试。
 
 * **新增：Uxplay >=1.74 现在自带一个自包含的 mdns 替代实现来取代 Bonjour，因此除非
@@ -1228,7 +1231,6 @@ Set-NetAdapterAdvancedProperty -Name "<name>" -DisplayName "Software Timestamp" 
 这里的 "`<name>`" 是 Windows 上的适配器名称：_例如_ "Ethernet"、"Wi-Fi"、"Ethernet 2"、_等等_。	如果你的 Windows 系统**不**支持内核
 时间戳，那么在使用 "`uxplay -d`" 调试选项时，你会看到一条确认这一点的消息。使用该选项时你还会看到 NTP 报文的到达
 时间，它们被标记为 `(kernel)` 或 ``(clock)``，以表明是否正在使用内核时间戳。
-
 
 <a name="usage"></a>
 # 用法

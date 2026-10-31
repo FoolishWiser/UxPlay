@@ -997,6 +997,13 @@ After the first time a pin authentication has been done, a client will not need 
 
 ## Building UxPlay on Microsoft Windows, using MSYS2 with the MinGW-64 compiler.
 
+> **Prebuilt Windows bundle (this localization fork)**: if you just want to use UxPlay, download
+> `uxplay-windows-ucrt64.zip` from the [Releases page](https://github.com/FoolishWiser/UxPlay/releases)
+> and double-click `run-zh.bat` (Chinese UI) or `run-en.bat` (English UI). The zip is built by GitHub
+> Actions in MSYS2/UCRT64 and already contains the required DLLs, GStreamer plugins and plugin scanner.
+> The instructions below describe building from source yourself.
+
+
 -   tested on Windows 10 and 11, 64-bit on x86_64, and Windows 11 on ARM.
 
 * **NEW: Uxplay >=1.74  now supplies its own self-contained mdns replacement for Bonjour, making step 1 unnecessary unless

@@ -61,14 +61,16 @@ else
     echo "==> plugin scanner: NOT FOUND (relies on system GStreamer)"
 fi
 
-# Dependencies: the executable plus every bundled plugin.
+# Dependencies: the executable (recursively) plus every bundled plugin
+# (one level deep -- their own deps are already covered by the exe walk).
+# ntldd costs ~1-3s per file on Windows, so the plugins are scanned in
+# parallel; doing this serially makes the step take 10+ minutes.
 {
-    collect build/uxplay.exe
-    for p in "$PREFIX"/lib/gstreamer-1.0/*.dll; do
-        [ -f "$p" ] || continue
-        collect "$p"
-    done
-} >"$TMPDEPS" 2>/dev/null || true
+    ntldd -R build/uxplay.exe 2>/dev/null || true
+    ls "$PREFIX"/lib/gstreamer-1.0/*.dll \
+        | xargs -r -P 12 -n 1 ntldd 2>/dev/null || true
+} | awk '{print $3}' | grep -i '\.dll' | sed 's|\\|/|g' >"$TMPDEPS" || true
+echo "==> dependency candidates: $(wc -l <"$TMPDEPS")"
 
 while IFS= read -r raw; do
     [ -n "$raw" ] || continue
