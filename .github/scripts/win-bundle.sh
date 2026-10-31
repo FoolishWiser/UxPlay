@@ -61,14 +61,16 @@ else
     echo "==> plugin scanner: NOT FOUND (relies on system GStreamer)"
 fi
 
-# Dependencies: the executable (recursively) plus every bundled plugin
-# (one level deep -- their own deps are already covered by the exe walk).
-# ntldd costs ~1-3s per file on Windows, so the plugins are scanned in
-# parallel; doing this serially makes the step take 10+ minutes.
+# Dependencies: full recursive closure of the executable and of every
+# bundled plugin. A one-level walk is not enough: e.g. avcodec-63.dll needs
+# swresample-7.dll / libx264-165.dll, and a missing transitive DLL makes the
+# plugin silently fail to load ("gstreamer plugin 'libav' not found" at
+# runtime). ntldd costs ~1-3s per file on Windows, so the plugins are
+# scanned in parallel -- serially this takes 10+ minutes.
 {
     ntldd -R build/uxplay.exe 2>/dev/null || true
     ls "$PREFIX"/lib/gstreamer-1.0/*.dll \
-        | xargs -r -P 12 -n 1 ntldd 2>/dev/null || true
+        | xargs -r -P 12 -n 1 ntldd -R 2>/dev/null || true
 } | awk '{print $3}' | grep -i '\.dll' | sed 's|\\|/|g' >"$TMPDEPS" || true
 echo "==> dependency candidates: $(wc -l <"$TMPDEPS")"
 

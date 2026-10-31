@@ -58,6 +58,22 @@ jobs:
       - name: Assemble portable bundle
         run: bash .github/scripts/win-bundle.sh ucrt64
 
+      - name: Smoke test the bundle
+        run: |
+          cd dist/uxplay-windows-ucrt64
+          export GST_PLUGIN_PATH="$PWD/plugins"
+          export GST_PLUGIN_SYSTEM_PATH_1_0="$PWD/plugins"
+          export GST_PLUGIN_SCANNER="$PWD/gst-plugin-scanner.exe"
+          ./uxplay.exe -zh -n ci-smoke > smoke.txt 2>&1 &
+          sleep 12
+          kill %1 2>/dev/null || true
+          echo "---- smoke.txt ----"
+          cat smoke.txt
+          if grep -q "找不到所需的 gstreamer 插件" smoke.txt; then
+            echo "::error::bundle is missing a GStreamer plugin (or its DLLs)"
+            exit 1
+          fi
+
       - name: Zip portable bundle
         shell: pwsh
         run: |
