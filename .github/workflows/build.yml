@@ -1,11 +1,9 @@
-name: Build
+name: Build Windows x64
 
 on:
   push:
     branches: [ master, main ]
     tags: [ 'v*' ]
-  pull_request:
-    branches: [ master, main ]
   workflow_dispatch:
 
 permissions:
@@ -13,117 +11,10 @@ permissions:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  # Disable interactive features
-  DEBIAN_FRONTEND: noninteractive
-  HOMEBREW_NO_ANALYTICS: 1
-  HOMEBREW_NO_INSTALL_CLEANUP: 1
 
 jobs:
-  build-linux:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            cmake \
-            g++ \
-            make \
-            libssl-dev \
-            libplist-dev \
-            gstreamer1.0-dev \
-            libgstreamer1.0-dev \
-            libgstreamer-plugins-base1.0-dev \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            gstreamer1.0-x \
-            libgl1-mesa-dev \
-            libdbus-1-dev \
-            pkg-config
-
-      - name: Configure CMake
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-            -DNO_X11_DEPS=OFF
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Verify binary
-        run: |
-          test -x build/uxplay
-          ls -la build/uxplay
-
-      - name: Upload Linux binary
-        uses: actions/upload-artifact@v7
-        with:
-          name: uxplay-linux-x86_64
-          path: build/uxplay
-          if-no-files-found: error
-          retention-days: 14
-
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Remove untrusted Homebrew AWS tap
-        run: brew untap aws/tap || true
-
-      - name: Install dependencies
-        run: |
-          brew install \
-            cmake \
-            openssl@3 \
-            libplist \
-            glib \
-            gstreamer \
-            gst-plugins-base \
-            gst-plugins-good \
-            orc \
-            meson
-
-      - name: Set OpenSSL path
-        run: |
-          echo "OPENSSL_ROOT_DIR=$(brew --prefix openssl@3)" >> $GITHUB_ENV
-
-      - name: Configure CMake
-        run: |
-          cmake -B build -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-            -DNO_X11_DEPS=ON
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Verify binary
-        run: |
-          test -x build/uxplay
-          ls -la build/uxplay
-
-  build-windows-intel:
+  windows-x64:
     runs-on: windows-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        msystem: [UCRT64, MINGW64]
-        include:
-          - msystem: UCRT64
-            pkg_prefix: mingw-w64-ucrt-x86_64
-            path_prefix: ucrt64
-            extra_pkgs: >-
-              mingw-w64-ucrt-x86_64-gst-plugins-good
-              mingw-w64-ucrt-x86_64-gst-plugins-bad
-              mingw-w64-ucrt-x86_64-gst-libav
-            bundle: true
-          - msystem: MINGW64
-            pkg_prefix: mingw-w64-x86_64
-            path_prefix: mingw64
-            extra_pkgs: "" # Bundled inside base packages in old repository mappings
-            bundle: false
     defaults:
       run:
         shell: msys2 {0}
@@ -131,29 +22,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      - name: Install MSYS2
+      - name: Install MSYS2 (UCRT64)
         uses: msys2/setup-msys2@v2
         with:
-          msystem: ${{ matrix.msystem }}
+          msystem: UCRT64
           update: true
           install: >-
-            ${{ matrix.pkg_prefix }}-cmake
-            ${{ matrix.pkg_prefix }}-gcc
-            ${{ matrix.pkg_prefix }}-openssl
-            ${{ matrix.pkg_prefix }}-libplist
-            ${{ matrix.pkg_prefix }}-gstreamer
-            ${{ matrix.pkg_prefix }}-gst-plugins-base
-            ${{ matrix.pkg_prefix }}-pkg-config
-            ${{ matrix.pkg_prefix }}-ntldd
-            ${{ matrix.extra_pkgs }}
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-libplist
+            mingw-w64-ucrt-x86_64-gstreamer
+            mingw-w64-ucrt-x86_64-gst-plugins-base
+            mingw-w64-ucrt-x86_64-gst-plugins-good
+            mingw-w64-ucrt-x86_64-gst-plugins-bad
+            mingw-w64-ucrt-x86_64-gst-libav
+            mingw-w64-ucrt-x86_64-pkg-config
+            mingw-w64-ucrt-x86_64-ntldd
             base-devel
 
       - name: Configure CMake
         env:
-          PKG_CONFIG_PATH: /${{ matrix.path_prefix }}/lib/pkgconfig
-        run: |
-          cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-            -DNO_X11_DEPS=ON
+          PKG_CONFIG_PATH: /ucrt64/lib/pkgconfig
+        run: cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} -DNO_X11_DEPS=ON
 
       - name: Build
         run: cmake --build build --parallel
@@ -162,19 +53,12 @@ jobs:
         run: |
           test -f build/uxplay.exe
           ls -la build/uxplay.exe
-
-      - name: Show Chinese help (bundle target)
-        if: matrix.bundle
-        run: |
-          ./build/uxplay.exe -zh -h 2>&1 | head -n 20 || true
+          ./build/uxplay.exe -zh -h 2>&1 | head -n 5 || true
 
       - name: Assemble portable bundle
-        if: matrix.bundle
-        run: |
-          bash .github/scripts/win-bundle.sh ${{ matrix.path_prefix }}
+        run: bash .github/scripts/win-bundle.sh ucrt64
 
       - name: Zip portable bundle
-        if: matrix.bundle
         shell: pwsh
         run: |
           $dir = Get-ChildItem dist -Directory | Select-Object -First 1
@@ -182,76 +66,26 @@ jobs:
           Compress-Archive -Path (Join-Path $dir.FullName '*') -DestinationPath $zip -CompressionLevel Optimal
           Get-Item $zip | Format-List Name, Length
 
-      - name: Upload Windows bundle
-        if: matrix.bundle
+      - name: Upload bundle
         uses: actions/upload-artifact@v7
         with:
-          name: uxplay-windows-${{ matrix.path_prefix }}
+          name: uxplay-windows-ucrt64
           path: dist/*.zip
           if-no-files-found: error
           retention-days: 14
 
-  build-windows-arm64:
-    runs-on: windows-11-arm
-    continue-on-error: true
-    strategy:
-      matrix:
-        msystem: [CLANGARM64]
-        include:
-          - msystem: CLANGARM64
-            pkg_prefix: mingw-w64-clang-aarch64
-            path_prefix: clangarm64
-    defaults:
-      run:
-        shell: msys2 {0}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v7
-
-      - name: Install MSYS2
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: ${{ matrix.msystem }}
-          update: true
-          install: >-
-            ${{ matrix.pkg_prefix }}-cmake
-            ${{ matrix.pkg_prefix }}-gcc
-            ${{ matrix.pkg_prefix }}-openssl
-            ${{ matrix.pkg_prefix }}-libplist
-            ${{ matrix.pkg_prefix }}-gstreamer
-            ${{ matrix.pkg_prefix }}-gst-plugins-base
-            ${{ matrix.pkg_prefix }}-pkg-config
-            base-devel
-
-      - name: Configure CMake
-        env:
-          PKG_CONFIG_PATH: /${{ matrix.path_prefix }}/lib/pkgconfig
-        run: |
-          cmake -B build -G "Unix Makefiles" -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }} \
-            -DNO_X11_DEPS=ON
-
-      - name: Build
-        run: cmake --build build --parallel
-
-      - name: Verify binary
-        run: |
-          test -f build/uxplay.exe
-          ls -la build/uxplay.exe
-
   release:
-    needs: [build-windows-intel]
+    needs: [windows-x64]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v7
-
-      - name: Download bundles
+      - name: Download bundle
         uses: actions/download-artifact@v7
         with:
           path: artifacts
           merge-multiple: true
-
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}

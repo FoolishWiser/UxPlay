@@ -105,7 +105,11 @@ write_bat() { # $1 = target file, $2 = language flag
 write_bat "$OUT/run-zh.bat" "-zh"
 write_bat "$OUT/run-en.bat" "-en"
 
-cat >"$OUT/运行说明.txt" <<'EOT'
+{
+  # UTF-8 BOM so Windows Notepad detects the encoding, ASCII name so
+  # Compress-Archive keeps it intact inside the zip.
+  printf '\xef\xbb\xbf'
+  cat <<'EOT'
 UxPlay 简体中文版（Windows 便携包）
 =====================================
 
@@ -123,6 +127,7 @@ UxPlay 简体中文版（Windows 便携包）
 说明：本程序是 UxPlay（https://github.com/FDH2/UxPlay）的汉化 fork，
 汉化内容与切换方式见包内 README.zh-CN.md。
 EOT
+} >"$OUT/HOWTO.txt"
 
 echo "==> bundle contents"
 find "$OUT" -maxdepth 1 -type f -printf '%12s  %f\n' | sort -k2
